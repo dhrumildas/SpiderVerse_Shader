@@ -1,18 +1,19 @@
-Shader "Custom/SpiderVerse/Dots_Lit_URP"
+Shader "Custom/SpiderVerse/Dots_Lit_Shadows_URP"
 {
     Properties
     {
-        _BaseColor ("Base Color", Color) = (0.05, 0.05, 0.05, 1)
-        _LitColor ("Lit Color", Color) = (1, 1, 1, 1)
-        _DotColor ("Dot Color", Color) = (1, 1, 1, 1)
+        _BaseColor ("Base Color", Color) = (0.09, 0.04, 0.07, 1)
+        _LitColor ("Lit Color", Color) = (0.29, 0.12, 0.18, 1)
+        _DotColor ("Dot Color", Color) = (1.0, 0.19, 0.35, 1)
 
-        _DotScale ("Dot Scale", Float) = 80
-        _MinDotRadius ("Min Dot Radius", Range(0.0, 0.5)) = 0.03
-        _MaxDotRadius ("Max Dot Radius", Range(0.01, 0.7)) = 0.28
-        _DotStrength ("Dot Strength", Range(0, 1)) = 1
+        _DotScale ("Dot Scale", Float) = 90
+        _MinDotRadius ("Min Dot Radius", Range(0.0, 0.5)) = 0.01
+        _MaxDotRadius ("Max Dot Radius", Range(0.01, 0.7)) = 0.16
+        _DotStrength ("Dot Strength", Range(0, 1)) = 0.75
 
-        _Rotation ("Pattern Rotation", Range(-180, 180)) = 0
-        _Ambient ("Ambient", Range(0, 1)) = 0.12
+        _Rotation ("Pattern Rotation", Range(-180, 180)) = -10
+        _Ambient ("Ambient", Range(0, 1)) = 0.14
+        _ShadowStrength ("Received Shadow Strength", Range(0, 1)) = 0.75
     }
 
     SubShader
@@ -26,13 +27,17 @@ Shader "Custom/SpiderVerse/Dots_Lit_URP"
 
         Pass
         {
-            Name "SpiderVerseDotsLit"
+            Name "SpiderVerseDotsLitShadows"
             Tags { "LightMode" = "UniversalForward" }
 
             HLSLPROGRAM
 
             #pragma vertex vert
             #pragma fragment frag
+
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma multi_compile _ _SHADOWS_SOFT
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -49,6 +54,7 @@ Shader "Custom/SpiderVerse/Dots_Lit_URP"
 
                 float _Rotation;
                 float _Ambient;
+                float _ShadowStrength;
             CBUFFER_END
 
             struct Attributes
@@ -63,12 +69,12 @@ Shader "Custom/SpiderVerse/Dots_Lit_URP"
                 float4 screenPos : TEXCOORD0;
                 float3 normalWS : TEXCOORD1;
                 float3 positionWS : TEXCOORD2;
+                float4 shadowCoords : TEXCOORD3;
             };
 
             float2 RotateUV(float2 uv, float degrees)
             {
                 float radians = degrees * 3.14159265 / 180.0;
-
                 float s = sin(radians);
                 float c = cos(radians);
 
@@ -82,7 +88,6 @@ Shader "Custom/SpiderVerse/Dots_Lit_URP"
             {
                 float2 cellUV = frac(uv) - 0.5;
                 float distToCenter = length(cellUV);
-
                 return step(distToCenter, radius);
             }
 
@@ -97,6 +102,7 @@ Shader "Custom/SpiderVerse/Dots_Lit_URP"
                 OUT.positionWS = posInputs.positionWS;
                 OUT.normalWS = normalize(normalInputs.normalWS);
                 OUT.screenPos = ComputeScreenPos(OUT.positionHCS);
+                OUT.shadowCoords = GetShadowCoord(posInputs);
 
                 return OUT;
             }
@@ -110,33 +116,53 @@ Shader "Custom/SpiderVerse/Dots_Lit_URP"
 
                 float ndotl = saturate(dot(normalWS, lightDir));
 
-                // Base cel-ish lighting for now
-                float lightAmount = saturate(ndotl + _Ambient);
+                // 1 = fully lit, 0 = fully shadowed
+                half shadowAmount = MainLightRealtimeShadow(IN.shadowCoords);
+
+                // Let us control how much the received shadow affects the stylized material
+                float shadowControl = lerp(1.0, shadowAmount, _ShadowStrength);
+
+                float lightAmount = saturate((ndotl * shadowControl) + _Ambient);
+
                 float3 baseLighting = lerp(_BaseColor.rgb, _LitColor.rgb, lightAmount);
 
-                // Screen-space UV
                 float2 screenUV = IN.screenPos.xy / IN.screenPos.w;
-
-                // Keep pattern square/circular
                 screenUV.x *= _ScreenParams.x / _ScreenParams.y;
 
-                // Rotate and tile
                 float2 patternUV = RotateUV(screenUV, _Rotation);
                 patternUV *= _DotScale;
 
-                // Dot radius grows as the surface faces the light
-                float radius = lerp(_MinDotRadius, _MaxDotRadius, ndotl);
+                float radius = lerp(_MinDotRadius, _MaxDotRadius, ndotl * shadowControl);
 
                 float dots = CirclePattern(patternUV, radius);
-
-                // Dots only strongly appear in lit areas
                 dots *= ndotl;
+                dots *= shadowControl;
                 dots *= _DotStrength;
 
                 float3 finalColor = lerp(baseLighting, _DotColor.rgb, dots);
 
                 return half4(finalColor, 1);
             }
+
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "ShadowCaster"
+            Tags { "LightMode" = "ShadowCaster" }
+
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+            Cull Back
+
+            HLSLPROGRAM
+
+            #pragma vertex ShadowPassVertex
+            #pragma fragment ShadowPassFragment
+
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl"
 
             ENDHLSL
         }
