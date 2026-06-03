@@ -25,11 +25,16 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
+    - _Ambient: 0.14
     - _DotRadius: 0.25
-    - _DotScale: 80
-    - _Rotation: 0
+    - _DotScale: 90
+    - _DotStrength: 0.75
+    - _MaxDotRadius: 0.16
+    - _MinDotRadius: 0.01
+    - _Rotation: -10
     m_Colors:
-    - _BaseColor: {r: 0.049999982, g: 0.049999982, b: 0.049999982, a: 1}
-    - _DotColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BaseColor: {r: 0.03529412, g: 0.039215688, b: 0.0627451, a: 1}
+    - _DotColor: {r: 1, g: 0.19215687, b: 0.3529412, a: 1}
+    - _LitColor: {r: 0.29411766, g: 0.11764706, b: 0.18431373, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

@@ -186,7 +186,7 @@ PrefabInstance:
     - target: {fileID: -4571605982943762130, guid: 70b9e80ef5509b440803201dc5836b28, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 28628520dacc70d40a79ccdee6ef4477, type: 2}
+      objectReference: {fileID: 2100000, guid: 7aff005123bb43d468972244cccfcfb4, type: 2}
     - target: {fileID: 919132149155446097, guid: 70b9e80ef5509b440803201dc5836b28, type: 3}
       propertyPath: m_Name
       value: Male Base Mesh (T-Pose)
@@ -304,7 +304,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 10, y: 1, z: 10}
+  m_LocalScale: {x: 50, y: 1, z: 50}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -345,8 +345,8 @@ Camera:
   m_GameObject: {fileID: 330585543}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -395,8 +395,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.30956614, y: -0.22476123, z: 0.07556016, w: -0.9208376}
-  m_LocalPosition: {x: -3.7906406, y: 12.481142, z: -5.5453734}
+  m_LocalRotation: {x: -0.15930954, y: -0.35071492, z: 0.060674783, w: -0.92083555}
+  m_LocalPosition: {x: -3.4787135, y: 9.06282, z: -3.1982489}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
