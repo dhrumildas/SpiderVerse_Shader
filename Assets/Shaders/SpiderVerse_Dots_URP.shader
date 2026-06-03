@@ -25,6 +25,11 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Cel_URP"
 
         _CelSteps ("Cel Steps", Range(2, 8)) = 4
         _CelInfluence ("Cel Influence", Range(0, 1)) = 1
+
+        _RimColor ("Rim Color", Color) = (1.0, 0.35, 0.55, 1)
+        _RimStrength ("Rim Strength", Range(0, 2)) = 0.75
+        _RimPower ("Rim Power", Range(0.5, 8)) = 3
+        _RimThreshold ("Rim Threshold", Range(0, 1)) = 0.35
     }
 
     SubShader
@@ -77,6 +82,11 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Cel_URP"
 
                 float _CelSteps;
                 float _CelInfluence;
+                
+                float4 _RimColor;
+                float _RimStrength;
+                float _RimPower;
+                float _RimThreshold;
             CBUFFER_END
 
             struct Attributes
@@ -87,10 +97,11 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Cel_URP"
 
             struct Varyings
             {
-                float4 positionHCS : SV_POSITION;
-                float4 screenPos   : TEXCOORD0;
-                float3 normalWS    : TEXCOORD1;
+                float4 positionHCS  : SV_POSITION;
+                float4 screenPos    : TEXCOORD0;
+                float3 normalWS     : TEXCOORD1;
                 float4 shadowCoords : TEXCOORD2;
+                float3 positionWS   : TEXCOORD3;
             };
 
             float2 RotateUV(float2 uv, float degrees)
@@ -132,6 +143,7 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Cel_URP"
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(IN.normalOS);
 
                 OUT.positionHCS = posInputs.positionCS;
+                OUT.positionWS = posInputs.positionWS;
                 OUT.normalWS = normalize(normalInputs.normalWS);
                 OUT.screenPos = ComputeScreenPos(OUT.positionHCS);
                 OUT.shadowCoords = GetShadowCoord(posInputs);
@@ -189,6 +201,21 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Cel_URP"
                 hatchLines *= _HatchStrength;
 
                 finalColor = lerp(finalColor, _HatchColor.rgb, hatchLines);
+
+                // -------------------------
+                // Stylized rim light
+                // -------------------------
+                float3 viewDirWS = normalize(GetWorldSpaceViewDir(IN.positionWS));
+                float rimRaw = 1.0 - saturate(dot(normalWS, viewDirWS));
+
+                float rim = pow(rimRaw, _RimPower);
+                rim = smoothstep(_RimThreshold, 1.0, rim);
+                rim *= _RimStrength;
+
+                // Let rim appear more on lit/side areas, less in full shadow
+                rim *= saturate(lightDriver + 0.35);
+
+                finalColor = lerp(finalColor, _RimColor.rgb, rim);
 
                 return half4(finalColor, 1);
             }
