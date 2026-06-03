@@ -1,4 +1,4 @@
-Shader "Custom/SpiderVerse/Dots_Hatching_Shadows_URP"
+Shader "Custom/SpiderVerse/Dots_Hatching_Cel_URP"
 {
     Properties
     {
@@ -22,6 +22,9 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Shadows_URP"
 
         _Ambient ("Ambient", Range(0, 1)) = 0.14
         _ShadowStrength ("Received Shadow Strength", Range(0, 1)) = 0.75
+
+        _CelSteps ("Cel Steps", Range(2, 8)) = 4
+        _CelInfluence ("Cel Influence", Range(0, 1)) = 1
     }
 
     SubShader
@@ -35,7 +38,7 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Shadows_URP"
 
         Pass
         {
-            Name "SpiderVerseDotsHatching"
+            Name "SpiderVerseDotsHatchingCel"
             Tags { "LightMode" = "UniversalForward" }
 
             HLSLPROGRAM
@@ -71,21 +74,23 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Shadows_URP"
 
                 float _Ambient;
                 float _ShadowStrength;
+
+                float _CelSteps;
+                float _CelInfluence;
             CBUFFER_END
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
-                float3 normalOS : NORMAL;
+                float3 normalOS   : NORMAL;
             };
 
             struct Varyings
             {
                 float4 positionHCS : SV_POSITION;
-                float4 screenPos : TEXCOORD0;
-                float3 normalWS : TEXCOORD1;
-                float3 positionWS : TEXCOORD2;
-                float4 shadowCoords : TEXCOORD3;
+                float4 screenPos   : TEXCOORD0;
+                float3 normalWS    : TEXCOORD1;
+                float4 shadowCoords : TEXCOORD2;
             };
 
             float2 RotateUV(float2 uv, float degrees)
@@ -113,6 +118,12 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Shadows_URP"
                 return step(lineUV, width);
             }
 
+            float Quantize01(float v, float steps)
+            {
+                steps = max(steps, 1.0);
+                return floor(v * steps) / steps;
+            }
+
             Varyings vert(Attributes IN)
             {
                 Varyings OUT;
@@ -121,7 +132,6 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Shadows_URP"
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(IN.normalOS);
 
                 OUT.positionHCS = posInputs.positionCS;
-                OUT.positionWS = posInputs.positionWS;
                 OUT.normalWS = normalize(normalInputs.normalWS);
                 OUT.screenPos = ComputeScreenPos(OUT.positionHCS);
                 OUT.shadowCoords = GetShadowCoord(posInputs);
@@ -141,23 +151,26 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Shadows_URP"
                 half shadowAmount = MainLightRealtimeShadow(IN.shadowCoords);
                 float shadowControl = lerp(1.0, shadowAmount, _ShadowStrength);
 
-                float litAmount = saturate((ndotl * shadowControl) + _Ambient);
+                float rawLight = saturate(ndotl * shadowControl);
+                float celLight = Quantize01(rawLight, _CelSteps);
+                float lightDriver = lerp(rawLight, celLight, _CelInfluence);
+
+                float litAmount = saturate(lightDriver + _Ambient);
                 float3 baseLighting = lerp(_BaseColor.rgb, _LitColor.rgb, litAmount);
 
                 float2 screenUV = IN.screenPos.xy / IN.screenPos.w;
                 screenUV.x *= _ScreenParams.x / _ScreenParams.y;
 
                 // -------------------------
-                // Lit Ben-Day dots
+                // Lit dots
                 // -------------------------
                 float2 dotUV = RotateUV(screenUV, _Rotation);
                 dotUV *= _DotScale;
 
-                float dotRadius = lerp(_MinDotRadius, _MaxDotRadius, ndotl * shadowControl);
+                float dotRadius = lerp(_MinDotRadius, _MaxDotRadius, lightDriver);
                 float dots = CirclePattern(dotUV, dotRadius);
 
-                dots *= ndotl;
-                dots *= shadowControl;
+                dots *= lightDriver;
                 dots *= _DotStrength;
 
                 float3 finalColor = lerp(baseLighting, _DotColor.rgb, dots);
@@ -165,8 +178,7 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Shadows_URP"
                 // -------------------------
                 // Shadow hatch lines
                 // -------------------------
-                float darkness = 1.0 - saturate(ndotl * shadowControl);
-
+                float darkness = 1.0 - lightDriver;
                 float hatchMask = smoothstep(_HatchThreshold, 1.0, darkness);
 
                 float2 hatchUV = RotateUV(screenUV, _HatchRotation);
