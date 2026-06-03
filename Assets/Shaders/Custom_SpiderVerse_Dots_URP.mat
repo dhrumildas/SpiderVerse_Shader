@@ -25,16 +25,35 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _Ambient: 0.14
+    - _Ambient: 0.153
+    - _CelInfluence: 1
+    - _CelSteps: 4
     - _DotRadius: 0.25
     - _DotScale: 90
     - _DotStrength: 0.75
-    - _MaxDotRadius: 0.16
+    - _Hatch2Rotation: -35
+    - _Hatch2Scale: 38
+    - _Hatch2Strength: 0.35
+    - _Hatch2Threshold: 0.8
+    - _Hatch2Width: 0.15
+    - _HatchRotation: 35
+    - _HatchScale: 45
+    - _HatchStrength: 0.45
+    - _HatchThreshold: 0.45
+    - _HatchWidth: 0.18
+    - _MaxDotRadius: 0.182
     - _MinDotRadius: 0.01
+    - _RimPower: 3
+    - _RimStrength: 2
+    - _RimThreshold: 0.35
     - _Rotation: -10
+    - _ShadowStrength: 0.715
     m_Colors:
     - _BaseColor: {r: 0.03529412, g: 0.039215688, b: 0.0627451, a: 1}
     - _DotColor: {r: 1, g: 0.19215687, b: 0.3529412, a: 1}
+    - _Hatch2Color: {r: 0.01, g: 0.005, b: 0.01, a: 1}
+    - _HatchColor: {r: 0.019607844, g: 0.007843138, b: 0.02745098, a: 1}
     - _LitColor: {r: 0.29411766, g: 0.11764706, b: 0.18431373, a: 1}
+    - _RimColor: {r: 1, g: 0.34999996, b: 0.54999995, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

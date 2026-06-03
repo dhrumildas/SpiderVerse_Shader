@@ -17,6 +17,13 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Cel_URP"
         _HatchStrength ("Hatch Strength", Range(0, 1)) = 0.8
         _HatchThreshold ("Hatch Threshold", Range(0, 1)) = 0.45
 
+        _Hatch2Color ("Second Hatch Color", Color) = (0.01, 0.005, 0.01, 1)
+        _Hatch2Scale ("Second Hatch Scale", Float) = 38
+        _Hatch2Width ("Second Hatch Width", Range(0.01, 0.95)) = 0.28
+        _Hatch2Strength ("Second Hatch Strength", Range(0, 1)) = 0.65
+        _Hatch2Threshold ("Second Hatch Threshold", Range(0, 1)) = 0.68
+        _Hatch2Rotation ("Second Hatch Rotation", Range(-180, 180)) = -35
+
         _Rotation ("Dot Rotation", Range(-180, 180)) = -10
         _HatchRotation ("Hatch Rotation", Range(-180, 180)) = 35
 
@@ -73,6 +80,13 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Cel_URP"
                 float _HatchWidth;
                 float _HatchStrength;
                 float _HatchThreshold;
+
+                float4 _Hatch2Color;
+                float _Hatch2Scale;
+                float _Hatch2Width;
+                float _Hatch2Strength;
+                float _Hatch2Threshold;
+                float _Hatch2Rotation;
 
                 float _Rotation;
                 float _HatchRotation;
@@ -201,6 +215,20 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Cel_URP"
                 hatchLines *= _HatchStrength;
 
                 finalColor = lerp(finalColor, _HatchColor.rgb, hatchLines);
+
+                // -------------------------
+                // Second cross-hatch layer for deepest shadows
+                // -------------------------
+                float hatch2Mask = smoothstep(_Hatch2Threshold, 1.0, darkness);
+
+                float2 hatch2UV = RotateUV(screenUV, _Hatch2Rotation);
+                hatch2UV *= _Hatch2Scale;
+
+                float hatch2Lines = HatchPattern(hatch2UV, _Hatch2Width);
+                hatch2Lines *= hatch2Mask;
+                hatch2Lines *= _Hatch2Strength;
+
+                finalColor = lerp(finalColor, _Hatch2Color.rgb, hatch2Lines);
 
                 // -------------------------
                 // Stylized rim light
