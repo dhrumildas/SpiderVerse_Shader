@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Custom_SpiderVerse_Dots_URP
+  m_Name: M_SpiderVerse_Body_FinalStable
   m_Shader: {fileID: 4800000, guid: 3bc65c193b26bde4bb4de3bc2307765e, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
