@@ -33,6 +33,9 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Cel_URP"
         _CelSteps ("Cel Steps", Range(2, 8)) = 4
         _CelInfluence ("Cel Influence", Range(0, 1)) = 1
 
+        _PosterizeSteps ("Posterize Steps", Range(2, 16)) = 6
+        _PosterizeStrength ("Posterize Strength", Range(0, 1)) = 0.45
+
         _RimColor ("Rim Color", Color) = (1.0, 0.35, 0.55, 1)
         _RimStrength ("Rim Strength", Range(0, 2)) = 0.75
         _RimPower ("Rim Power", Range(0.5, 8)) = 3
@@ -96,6 +99,9 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Cel_URP"
 
                 float _CelSteps;
                 float _CelInfluence;
+
+                float _PosterizeSteps;
+                float _PosterizeStrength;
                 
                 float4 _RimColor;
                 float _RimStrength;
@@ -147,6 +153,12 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Cel_URP"
             {
                 steps = max(steps, 1.0);
                 return floor(v * steps) / steps;
+            }
+
+            float3 PosterizeColor(float3 color, float steps)
+            {
+                steps = max(steps, 1.0);
+                return floor(color * steps) / steps;
             }
 
             Varyings vert(Attributes IN)
@@ -244,6 +256,12 @@ Shader "Custom/SpiderVerse/Dots_Hatching_Cel_URP"
                 rim *= saturate(lightDriver + 0.35);
 
                 finalColor = lerp(finalColor, _RimColor.rgb, rim);
+
+                // -------------------------
+                // Print-style colour posterization
+                // -------------------------
+                float3 posterizedColor = PosterizeColor(finalColor, _PosterizeSteps);
+                finalColor = lerp(finalColor, posterizedColor, _PosterizeStrength);
 
                 return half4(finalColor, 1);
             }
