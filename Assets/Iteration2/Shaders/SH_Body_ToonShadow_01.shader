@@ -2,6 +2,10 @@ Shader "Spiderverse/Body_ToonHatch_02"
 {
     Properties
     {
+        _SketchFPS ("Sketch FPS", Range(1, 60)) = 12
+        _SketchJitter ("Sketch Jitter", Range(0, 0.1)) = 0.015
+        _SketchSpeed ("Sketch Speed", Range(0, 10)) = 1
+
         _OutlineColor ("Outline Color", Color) = (0, 0, 0, 1)
         _OutlineThickness ("Outline Thickness", Range(0, 0.08)) = 0.015
 
@@ -111,6 +115,9 @@ Shader "Spiderverse/Body_ToonHatch_02"
             SAMPLER(sampler_HatchTex);
 
             CBUFFER_START(UnityPerMaterial)
+                float _SketchFPS;
+                float _SketchJitter;
+                float _SketchSpeed;
                 float4 _BaseColor;
                 float4 _LightColor;
                 float4 _ShadowColor;
@@ -178,15 +185,31 @@ Shader "Spiderverse/Body_ToonHatch_02"
                 // 0 = lit, 1 = shadow
                 float shadowArea = 1.0 - toonLight;
 
-                // Screen-space hatch UV
                 float2 screenUV = input.screenPos.xy / input.screenPos.w;
                 float aspect = _ScreenParams.x / _ScreenParams.y;
                 screenUV.x *= aspect;
 
+                // stepped animation time, like the Godot shader
+                float safeFPS = max(_SketchFPS, 1.0);
+                float steppedTime = floor(_Time.y * safeFPS) / safeFPS;
+
+                // cheap pseudo-random stepped offset
+                float frameIndex = floor(_Time.y * safeFPS);
+                float2 randomOffset;
+                randomOffset.x = frac(sin(frameIndex * 12.9898) * 43758.5453);
+                randomOffset.y = frac(sin(frameIndex * 78.233) * 24634.6345);
+
+                randomOffset = (randomOffset - 0.5) * _SketchJitter;
+
+                // directional drift, also stepped
+                float2 drift = float2(steppedTime * 0.12, steppedTime * 0.07) * _SketchSpeed;
+
+                float2 hatchUV = screenUV * _HatchScale + randomOffset + drift;
+
                 float hatch = SAMPLE_TEXTURE2D(
                     _HatchTex,
                     sampler_HatchTex,
-                    screenUV * _HatchScale
+                    hatchUV
                 ).r;
 
                 // Make hatch appear earlier inside shadow areas
