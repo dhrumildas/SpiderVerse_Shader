@@ -2,6 +2,9 @@ Shader "Spiderverse/Body_ToonHatch_02"
 {
     Properties
     {
+        _OutlineColor ("Outline Color", Color) = (0, 0, 0, 1)
+        _OutlineThickness ("Outline Thickness", Range(0, 0.08)) = 0.015
+
         _BaseColor ("Base Color", Color) = (0.85, 0.85, 0.82, 1)
         _LightColor ("Lit Color", Color) = (1, 1, 0.95, 1)
         _ShadowColor ("Shadow Color", Color) = (0.25, 0.25, 0.25, 1)
@@ -24,6 +27,60 @@ Shader "Spiderverse/Body_ToonHatch_02"
             "RenderPipeline"="UniversalPipeline"
             "RenderType"="Opaque"
             "Queue"="Geometry"
+        }
+
+        Pass
+        {
+            Name "Outline"
+            Tags { "LightMode"="SRPDefaultUnlit" }
+
+            Cull Front
+            ZWrite On
+            ZTest LEqual
+
+            HLSLPROGRAM
+
+            #pragma vertex vert
+            #pragma fragment frag
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _OutlineColor;
+                float _OutlineThickness;
+            CBUFFER_END
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS   : NORMAL;
+            };
+
+            struct Varyings
+            {
+                float4 positionHCS : SV_POSITION;
+            };
+
+            Varyings vert(Attributes input)
+            {
+                Varyings output;
+
+                float3 posOS = input.positionOS.xyz;
+                float3 normalOS = normalize(input.normalOS);
+
+                posOS += normalOS * _OutlineThickness;
+
+                output.positionHCS = TransformObjectToHClip(posOS);
+
+                return output;
+            }
+
+            half4 frag(Varyings input) : SV_Target
+            {
+                return _OutlineColor;
+            }
+
+            ENDHLSL
         }
 
         Pass
